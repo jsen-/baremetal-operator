@@ -371,7 +371,7 @@ func (p *ironicProvisioner) ValidateManagementAccess(data provisioner.Management
 				Name:                p.objectMeta.Name,
 				DriverInfo:          driverInfo,
 				DeployInterface:     p.deployInterface(data.CurrentImage),
-				InspectInterface:    "inspector",
+				InspectInterface:    "redfish",
 				ManagementInterface: bmcAccess.ManagementInterface(),
 				PowerInterface:      bmcAccess.PowerInterface(),
 				RAIDInterface:       bmcAccess.RAIDInterface(),
@@ -1199,6 +1199,22 @@ func (p *ironicProvisioner) Provision(data provisioner.ProvisionData) (result pr
 	p.log.Info("provisioning image to host", "state", ironicNode.ProvisionState)
 
 	ironicHasSameImage := p.ironicHasSameImage(ironicNode, data.Image)
+
+	networkDataRaw, err := data.HostConfig.NetworkData()
+	if err != nil {
+		return provisioner.Result{}, errors.Wrap(err, "could not retrieve network data")
+	}
+	networkData := map[string]interface{}{}
+	if err := yaml.Unmarshal([]byte(networkDataRaw), &networkData); err != nil {
+		return provisioner.Result{}, errors.Wrap(err, "could not unmarshal network data")
+	}
+
+	if networkDataRaw != "" {
+		_, _, err := p.tryUpdateNode(ironicNode, updateOptsBuilder(p.log).SetTopLevelOpt("network_data", networkData, ironicNode))
+		if err != nil {
+			return provisioner.Result{}, errors.Wrap(err, "could not update node")
+		}
+	}
 
 	// Ironic has the settings it needs, see if it finds any issues
 	// with them.

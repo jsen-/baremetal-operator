@@ -36,9 +36,9 @@ var profiles = make(map[string]Profile)
 func init() {
 	profiles[DefaultProfileName] = Profile{
 		Name: DefaultProfileName,
-		RootDeviceHints: metal3v1alpha1.RootDeviceHints{
-			DeviceName: "/dev/sda",
-		},
+		// RootDeviceHints: metal3v1alpha1.RootDeviceHints{
+		// 	DeviceName: "/dev/sda",
+		// },
 		RootGB:  10,
 		LocalGB: 50,
 		CPUArch: "x86_64",
